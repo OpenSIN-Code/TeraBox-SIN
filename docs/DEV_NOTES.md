@@ -29,6 +29,7 @@ https://www.terabox.com/wap/glodminer?show_type=3
 https://www.terabox.com/wap/commercial/taskcenter
 https://www.terabox.com/wap/commercial/taskcenter?version=3.34.1
 https://www.terabox.com/wap/commercial/usercenter?isNewCommercial=1
+https://www.terabox.com/wap/coins/product?productId=159&version=3.34.1
 https://www.terabox.com/wap/taskcenter/signin
 https://www.terabox.com/wap/taskcenter/game-center
 https://www.terabox.com/wap/commercial/spacelist
