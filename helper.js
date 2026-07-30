@@ -186,6 +186,9 @@ function printProgressLog(prepText, sentData, fsize){
     const percentage = Math.floor((uploadedBytesSum / fsize) * 100);
     const percentageFStr = `${percentage}% ${uploadedBytesFStr}`;
     const uploadStatusArr = [percentageFStr, uploadSpeedStr, remainingTimeStr];
+    
+    uploadStatusArr.splice(-1, 0, formatEta(Math.round((Date.now() - sentData.start) / 1000)));
+    
     process.stdout.write(`${prepText}: ${uploadStatusArr.join(', ')}`);
     readline.clearLine(process.stdout, 1);
 }
@@ -312,6 +315,10 @@ async function uploadChunks(app, data, filePath, maxTasks = 10, maxTries = 5) {
     uploadData.maxTries = maxTries;
     
     if(data.uploaded.filter(pStatus => pStatus == false).length > 0){
+        const progressTimer = setInterval(() => {
+            printProgressLog('Uploading', uploadData, data.size);
+        }, 1000);
+        
         for (let partSeq = 0; partSeq < totalChunks; partSeq++) {
             uploadData.parts[partSeq] = 0;
             if(data.uploaded[partSeq]){
@@ -332,6 +339,7 @@ async function uploadChunks(app, data, filePath, maxTasks = 10, maxTries = 5) {
         printProgressLog('Uploading', uploadData, data.size);
         const cMaxTasks = totalChunks > maxTasks ? maxTasks : totalChunks;
         const upload_status = await runWithConcurrencyLimit(data, tasks, cMaxTasks);
+        clearInterval(progressTimer);
         
         console.log();
         externalAbortController.abort();
