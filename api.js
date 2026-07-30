@@ -442,7 +442,7 @@ class TeraBoxApp {
     // Application parameters and configuration
     params = {
         whost: 'https://www.' + this.TERABOX_DOMAIN,
-        uhost: 'https://c-jp.' + this.TERABOX_DOMAIN,
+        uhost: 'https://c-all.' + this.TERABOX_DOMAIN,
         lang: 'en',
         app: {
             app_id: 250528,
