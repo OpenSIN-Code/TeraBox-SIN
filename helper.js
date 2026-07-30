@@ -172,7 +172,9 @@ function formatEta(remTimeInt){
 function printProgressLog(prepText, sentData, fsize){
     readline.cursorTo(process.stdout, 0, null);
     
-    const uploadedBytesSum = Object.values(sentData.parts).reduce((acc, value) => acc + value, 0);
+    const partsData = Object.values(sentData.parts);
+    
+    const uploadedBytesSum = partsData.reduce((acc, value) => acc + value, 0);
     const uploadedBytesStr = filesize(uploadedBytesSum, {standard: 'iec', round: 3, pad: true, separator: '.'});
     const filesizeBytesStr = filesize(fsize, {standard: 'iec', round: 3, pad: true});
     const uploadedBytesFStr = `(${uploadedBytesStr}/${filesizeBytesStr})`;
@@ -188,6 +190,13 @@ function printProgressLog(prepText, sentData, fsize){
     const uploadStatusArr = [percentageFStr, uploadSpeedStr, remainingTimeStr];
     
     uploadStatusArr.splice(-1, 0, formatEta(Math.round((Date.now() - sentData.start) / 1000)));
+    
+    if(partsData.length > 1){
+        const partsTotal = partsData.length;
+        const partsNumLen = Math.floor(Math.log10(Math.abs(partsTotal))) + 1;
+        const partsReady = (partsData.filter(value => value > 0).length).toString().padStart(partsNumLen, '0');
+        uploadStatusArr.splice(1, 0, `[${partsReady}/${partsTotal}]`);
+    }
     
     process.stdout.write(`${prepText}: ${uploadStatusArr.join(', ')}`);
     readline.clearLine(process.stdout, 1);
