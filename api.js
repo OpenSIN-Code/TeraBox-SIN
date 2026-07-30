@@ -2137,8 +2137,12 @@ class TeraBoxApp {
                 throw new Error(`HTTP error! Status: ${req.statusCode}`);
             }
             
+            // now it can be response as need verify error, even in browsers
             const rdata = await req.body.json();
-            this.params.uhost = 'https://' + rdata.host;
+            if(!rdata.errno){
+                this.params.uhost = 'https://' + rdata.host;
+            }
+            
             return rdata;
         }
         catch (error) {
