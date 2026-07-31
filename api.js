@@ -1629,7 +1629,7 @@ class TeraBoxApp {
             }
             
             const rdata = await req.body.json();
-            // rdata.errno: 2 - already exist?
+            
             return rdata;
         }
         catch (error) {
