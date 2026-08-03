@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+SCRIPT=$0
+while [ -L "$SCRIPT" ]; do
+    DIR=$(CDPATH= cd -P -- "$(dirname -- "$SCRIPT")" && pwd)
+    TARGET=$(readlink "$SCRIPT")
+    case "$TARGET" in
+        /*) SCRIPT=$TARGET ;;
+        *) SCRIPT=$DIR/$TARGET ;;
+    esac
+done
+ROOT=$(CDPATH= cd -P -- "$(dirname -- "$SCRIPT")/.." && pwd)
+exec node "$ROOT/src/sin/stdio.js"

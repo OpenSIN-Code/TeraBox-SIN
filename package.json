@@ -1,38 +1,65 @@
 {
-    "name": "terabox-api",
-    "name_ext": "TeraBox API",
-    "version": "2.9.5",
-    "main": "api.js",
-    "type": "module",
-    "scripts": {
-        "html": "python docs/apidoc.py",
-        "lint": "eslint . --config .eslint.config.js"
-    },
-    "keywords": [
-        "terabox"
-    ],
-    "author": "Seiya Dev.",
-    "license": "MIT",
-    "description": "NodeJS tool for interacting with the TeraBox cloud service without the need to use the website or app ☁️",
-    "homepage": "https://github.com/seiya-npm/terabox-api#readme",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/seiya-npm/terabox-api.git"
-    },
-    "bugs": {
-        "url": "https://github.com/seiya-npm/terabox-api/issues"
-    },
-    "dependencies": {
-        "crc-32": "^1.2.2",
-        "filesize": "^11.0.22",
-        "tough-cookie": "^6.0.2",
-        "undici": "^8.9.0"
-    },
-    "devDependencies": {
-        "@eslint/js": "^10.0.1",
-        "docdash": "^2.0.2",
-        "eslint": "^10.8.0",
-        "globals": "^17.8.0",
-        "jsdoc": "^4.0.5"
-    }
+  "name": "terabox-sin",
+  "name_ext": "TeraBox-SIN",
+  "version": "3.0.0-sin.1",
+  "description": "Full TeraBox client, CLI and MCP app for ChatGPT and autonomous agents, based on seiya-npm/terabox-api.",
+  "type": "module",
+  "main": "api.js",
+  "exports": {
+    ".": "./api.js",
+    "./sin": "./src/sin/client.js",
+    "./mcp": "./src/sin/server.js"
+  },
+  "bin": {
+    "terabox-sin": "./bin/terabox-sin"
+  },
+  "scripts": {
+    "html": "python docs/apidoc.py",
+    "lint": "eslint . --config .eslint.config.js",
+    "test": "node --test",
+    "check": "npm run lint && npm test",
+    "cli": "node src/sin/cli.js",
+    "mcp": "node src/sin/stdio.js",
+    "install:wow": "node scripts/install-wow-my-zsh.js",
+    "doctor": "node src/sin/cli.js doctor"
+  },
+  "keywords": [
+    "terabox",
+    "mcp",
+    "chatgpt",
+    "cloud-storage",
+    "agent-tools"
+  ],
+  "author": "Seiya Dev. and Delqhi/SIN",
+  "contributors": [
+    "Seiya Dev. (original terabox-api implementation)"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/Delqhi/TeraBox-SIN#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Delqhi/TeraBox-SIN.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Delqhi/TeraBox-SIN/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "crc-32": "^1.2.2",
+    "filesize": "^11.0.22",
+    "tough-cookie": "^6.0.2",
+    "undici": "^8.9.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "docdash": "^2.0.2",
+    "eslint": "^10.8.0",
+    "globals": "^17.8.0",
+    "jsdoc": "^4.0.5"
+  }
 }
