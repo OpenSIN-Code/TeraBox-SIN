@@ -38,7 +38,7 @@ async function main() {
     registry.servers['terabox-sin'] = {
         _note: 'Full TeraBox Storage Cloud integration. Every public method from the installed TeraBox-SIN fork is exposed, including reads, uploads, downloads, sharing and file-management writes.',
         transport: 'local',
-        command: [join(projectRoot, 'bin', 'terabox-sin-mcp')],
+        command: ['terabox-sin-mcp'],
         env: {},
         agents: ['claude', 'opencode', 'codex', 'cline', 'jcode', 'mimo'],
         tier: 'core',
