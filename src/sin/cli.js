@@ -24,7 +24,7 @@ function output(value) {
 }
 
 function usage(exitCode = 0) {
-    process.stderr.write('TeraBox-SIN\n\nUsage:\n  terabox-sin doctor\n  terabox-sin status\n  terabox-sin methods\n  terabox-sin call <method> [json-array|@file.json] [--output <path>]\n  terabox-sin session status\n  terabox-sin session set          # native hidden macOS dialog, or token on stdin\n  terabox-sin session delete\n  terabox-sin login <email>        # native hidden password dialog\n  terabox-sin mcp                  # stdio MCP server\n');
+    process.stderr.write('TeraBox-SIN\n\nUsage:\n  terabox-sin doctor\n  terabox-sin status\n  terabox-sin methods\n  terabox-sin call <method> [json-array|@file.json] [--output <path>]\n  terabox-sin session status\n  terabox-sin session set          # native hidden macOS dialog, or token on stdin\n  terabox-sin session delete\n  terabox-sin login [email]        # native email/password dialogs on macOS\n  terabox-sin mcp                  # stdio MCP server\n');
     process.exit(exitCode);
 }
 
@@ -32,6 +32,13 @@ async function readAllStdin() {
     const chunks = [];
     for await (const chunk of process.stdin) chunks.push(chunk);
     return Buffer.concat(chunks).toString('utf8').trim();
+}
+
+async function textDialog(prompt) {
+    if (process.platform !== 'darwin') throw new Error('Native dialog is available only on macOS. Pass the value as an argument instead.');
+    const script = `text returned of (display dialog ${JSON.stringify(prompt)} default answer "" buttons {"Cancel", "OK"} default button "OK")`;
+    const { stdout } = await execFileAsync('/usr/bin/osascript', ['-e', script], { timeout: 300000 });
+    return stdout.trim();
 }
 
 async function hiddenDialog(prompt) {
@@ -119,9 +126,11 @@ async function main() {
     }
 
     if (command === 'login') {
-        const email = argv.shift();
-        if (!email) throw new Error('login requires an email address.');
-        const password = await secretInput(`TeraBox-Passwort für ${email}`);
+        const email = argv.shift() || await textDialog('TeraBox-Konto-E-Mail eingeben');
+        if (!email) throw new Error('No email supplied.');
+        const password = process.platform === 'darwin'
+            ? await hiddenDialog(`TeraBox-Passwort für ${email}`)
+            : await secretInput(`TeraBox-Passwort für ${email}`);
         if (!password) throw new Error('No password supplied.');
         const client = await createTeraBoxClient({ requireAuth: false });
         const prelogin = await client.passportPreLogin(email);
