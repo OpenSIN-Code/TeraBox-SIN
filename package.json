@@ -1,7 +1,7 @@
 {
   "name": "terabox-sin",
   "name_ext": "TeraBox-SIN",
-  "version": "3.0.0-sin.1",
+  "version": "3.0.0-sin.2",
   "description": "Full TeraBox client, CLI and MCP app for ChatGPT and autonomous agents, based on seiya-npm/terabox-api.",
   "type": "module",
   "main": "api.js",
@@ -35,13 +35,13 @@
     "Seiya Dev. (original terabox-api implementation)"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/Delqhi/TeraBox-SIN#readme",
+  "homepage": "https://github.com/OpenSIN-Code/TeraBox-SIN#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Delqhi/TeraBox-SIN.git"
+    "url": "git+https://github.com/OpenSIN-Code/TeraBox-SIN.git"
   },
   "bugs": {
-    "url": "https://github.com/Delqhi/TeraBox-SIN/issues"
+    "url": "https://github.com/OpenSIN-Code/TeraBox-SIN/issues"
   },
   "engines": {
     "node": ">=20"
@@ -51,7 +51,7 @@
     "crc-32": "^1.2.2",
     "filesize": "^11.0.22",
     "tough-cookie": "^6.0.2",
-    "undici": "^8.9.0",
+    "undici": "7.29.0",
     "zod": "^4.1.0"
   },
   "devDependencies": {
