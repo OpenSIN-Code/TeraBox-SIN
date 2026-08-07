@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-      - 'api-*'
 
 permissions:
   id-token: write
@@ -24,8 +23,16 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+          registry-url: 'https://registry.npmjs.org'
       - name: Update npm for trusted publishing
         run: npm install --global 'npm@^11.5.1'
+      - name: Verify release tag matches package version
+        run: |
+          EXPECTED="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$EXPECTED" ]; then
+            echo "Release tag $GITHUB_REF_NAME does not match package version $EXPECTED" >&2
+            exit 1
+          fi
       - name: Install
         run: npm ci
       - name: Check

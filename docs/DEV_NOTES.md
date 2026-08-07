@@ -130,3 +130,7 @@ Before a release:
 4. browser runtime state is absent from the Git index.
 5. no NDUS/cookie/token/password values appear in the diff.
 6. upstream attribution remains intact.
+7. Create a tag that exactly matches `v${package.json.version}`; the publish workflow rejects mismatched tags.
+8. The first npm.org publish requires a one-time bootstrap credential before switching this package to Trusted Publishing. Store that credential as the repository secret `NPM_TOKEN`, publish once, then remove the secret and configure npm Trusted Publishing for this GitHub repository/workflow.
+
+The publish workflow uses npm consistently, creates npm registry auth configuration through `actions/setup-node`, supports the one-time `NPM_TOKEN` bootstrap path, and otherwise uses npm Trusted Publishing with OIDC.
