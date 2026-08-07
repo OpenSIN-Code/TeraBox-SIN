@@ -5,7 +5,7 @@ TeraBox-SIN is a TeraBox client, CLI, MCP server, and optional browser-automatio
 The repository has two distinct integration modes:
 
 1. **API client / CLI / MCP** — the maintained `seiya-npm/terabox-api` codebase with SIN wrappers, authenticated with an NDUS session.
-2. **Browser automation** — a separate Playwright/CDP workflow that keeps a normal TeraBox login inside a dedicated Chrome profile and does not export browser authentication data.
+2. **Browser automation** — a separate raw-CDP workflow that keeps a normal TeraBox login inside a dedicated Chrome profile and does not export browser authentication data.
 
 These modes are intentionally separate. The browser profile is never committed and is not required to use the CLI or MCP server.
 
@@ -151,7 +151,7 @@ The server exposes:
 - `terabox_call`
 - one generated `terabox_<method>` tool for each public method discovered at startup
 
-Tool annotations are **heuristics for client UX**, not a security boundary. A method marked read-only or mutating can still depend on upstream behavior. Agents should inspect method names/signatures and obtain appropriate user approval before destructive changes.
+Tool annotations are conservative UX hints, not authorization. Ambiguous generic methods such as `doReq` and `filemanager` are treated as potentially destructive. `terabox_methods` is available without authentication so agents can discover the installed method surface before a session is configured.
 
 ## Browser automation
 
@@ -193,7 +193,23 @@ Treat all TeraBox authentication material as account credentials.
 - Prefer Keychain storage over plaintext files on macOS.
 - Review destructive operations such as delete, clear, move, overwrite and share changes before execution.
 
-Result normalization masks common secret fields, but redaction is defense-in-depth and must not be treated as proof that arbitrary upstream payloads contain no secrets.
+Result normalization masks common token/secret fields, but redaction is defense-in-depth and must not be treated as proof that arbitrary upstream payloads contain no secrets.
+
+### MCP local-access sandbox
+
+MCP local-value adapters and explicit `output_path` writes are denied by default. Configure allowed filesystem roots explicitly with the platform path separator (`:` on macOS/Linux):
+
+```bash
+export TERABOX_SIN_ALLOWED_ROOTS="$HOME/Downloads:$HOME/Documents"
+```
+
+The `$env` adapter is also denied by default. Permit only named variables:
+
+```bash
+export TERABOX_SIN_ALLOWED_ENV="MY_SAFE_INPUT,ANOTHER_SAFE_INPUT"
+```
+
+These restrictions apply to MCP calls. Direct CLI use remains a local-user operation and can access paths supplied by that user.
 
 ## Stability
 

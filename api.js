@@ -797,7 +797,7 @@ class TeraBoxApp {
             
             const cJar = new CookieJar();
             this.params.cookie.split(';').map(cookie => cJar.setCookieSync(cookie, this.params.whost));
-            const browserid = cJar.toJSON().cookies.find(c => c.key === 'browserid').value || '';
+            const browserid = cJar.toJSON().cookies.find(c => c.key === 'browserid')?.value || '';
             const encpwd = this.ChangeBase64Type(this.EncryptRSA(pass, this.data.pubkey, 2));
             
             const prand = this.PRandGen('web', preLoginData.seval, encpwd, email, browserid, preLoginData.random);
@@ -838,7 +838,11 @@ class TeraBoxApp {
                 for(const cookie of req.headers['set-cookie']){
                     cJar.setCookieSync(cookie.split('; ')[0], this.params.whost);
                 }
-                const ndus = cJar.toJSON().cookies.find(c => c.key === 'ndus').value;
+                const ndus = cJar.toJSON().cookies.find(c => c.key === 'ndus')?.value;
+                if(!ndus){
+                    throw new Error('Successful response did not include an NDUS cookie.');
+                }
+                rdata.data ||= {};
                 rdata.data.ndus = ndus;
             }
             return rdata;
@@ -999,7 +1003,11 @@ class TeraBoxApp {
                     cJar.setCookieSync(cookie.split('; ')[0], this.params.whost);
                 }
                 
-                const ndus = cJar.toJSON().cookies.find(c => c.key === 'ndus').value;
+                const ndus = cJar.toJSON().cookies.find(c => c.key === 'ndus')?.value;
+                if(!ndus){
+                    throw new Error('Successful response did not include an NDUS cookie.');
+                }
+                rdata.data ||= {};
                 rdata.data.ndus = ndus;
             }
             return rdata;
@@ -1038,7 +1046,7 @@ class TeraBoxApp {
             return rdata;
         }
         catch (error) {
-            throw new Error('getPassport', { cause: error });
+            throw new Error('passportGetInfo', { cause: error });
         }
     }
     
@@ -1755,7 +1763,7 @@ class TeraBoxApp {
             return rdata;
         }
         catch (error) {
-            throw new Error('remoteUpload', { cause: error });
+            throw new Error('remoteUploadDelete', { cause: error });
         }
     }
     
@@ -2244,7 +2252,7 @@ class TeraBoxApp {
             return rdata;
         }
         catch (error) {
-            throw new Error('createFolder', { cause: error });
+            throw new Error('createDir', { cause: error });
         }
     }
     

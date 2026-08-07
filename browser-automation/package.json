@@ -1,6 +1,6 @@
 {
   "name": "terabox-sin-browser-automation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Local TeraBox browser automation with a persistent Chrome profile.",
@@ -9,9 +9,10 @@
     "status": "node scripts/status.mjs",
     "snapshot": "node scripts/snapshot.mjs",
     "upload": "node scripts/upload.mjs",
-    "mkdir": "node scripts/mkdir.mjs"
+    "mkdir": "node scripts/mkdir.mjs",
+    "test": "node --test"
   },
   "dependencies": {
-    "playwright": "^1.58.2"
+    "chrome-remote-interface": "0.34.0"
   }
 }

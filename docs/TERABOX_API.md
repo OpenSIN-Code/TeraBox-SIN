@@ -51,7 +51,7 @@ The exact method set and endpoint behavior can change as the inherited implement
 
 ## 3. Browser automation
 
-`browser-automation/` is a third, separate path. It drives the normal TeraBox web UI using a dedicated Chrome profile and Playwright/CDP.
+`browser-automation/` is a third, separate path. It drives the normal TeraBox web UI using a dedicated Chrome profile and direct Chrome DevTools Protocol (CDP) access.
 
 It does not convert the browser session into NDUS/OAuth credentials and does not require the official Open Platform application flow.
 

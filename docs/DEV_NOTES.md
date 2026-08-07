@@ -18,7 +18,7 @@ The SIN layer lives under `src/sin/`:
 
 ### Browser automation
 
-`browser-automation/` is deliberately separate from the core client. It uses Playwright over a local Chrome DevTools Protocol endpoint and stores browser state only in ignored runtime directories.
+`browser-automation/` is deliberately separate from the core client. It uses `chrome-remote-interface` over a loopback-only Chrome DevTools Protocol endpoint and stores browser state only in ignored runtime directories.
 
 Do not couple browser-profile authentication to NDUS storage unless there is a separately reviewed design for that conversion.
 
@@ -47,11 +47,9 @@ Consequences:
 
 ## Mutation annotations
 
-`isLikelyMutating()` is a name-based heuristic used for MCP annotations. It is not an authorization system and is known to over-classify some methods whose names contain terms such as `login`, `upload` or `recycle`.
+`isLikelyMutating()` and `isLikelyDestructive()` provide conservative MCP annotations. Known reads are explicitly recognized, ambiguous generic entry points such as `doReq` and `filemanager` are forced into the mutating/destructive class, and unknown methods fall back to mutating.
 
-Do not make security decisions solely from these annotations.
-
-If classification quality becomes important, replace the heuristic with an explicit reviewed method-policy table plus a conservative fallback.
+Do not make authorization decisions solely from these annotations. Keep the conservative fallback when upstream adds new methods.
 
 ## Argument materialization
 
@@ -65,7 +63,9 @@ If classification quality becomes important, replace the heuristic with an expli
 - `$abort_signal`
 - `$progress`
 
-Keep these adapters small and deterministic. New adapters that access credentials, network resources or executable code require additional security review.
+Keep these adapters small and deterministic. MCP calls pass explicit filesystem and environment allowlists into materialization. Filesystem-backed adapters and explicit output paths are deny-by-default unless `TERABOX_SIN_ALLOWED_ROOTS` is configured; `$env` is deny-by-default unless the variable is named in `TERABOX_SIN_ALLOWED_ENV`. Path checks canonicalize existing path components to block symlink escapes.
+
+Direct CLI invocation remains a local-user trust boundary and does not apply the MCP allowlists. New adapters that access credentials, network resources or executable code require additional security review.
 
 ## Result normalization
 
@@ -112,19 +112,13 @@ Run before committing:
 npm run check
 ```
 
-The suite currently covers public-method discovery/materialization behavior and MCP server exposure. Add focused regression tests when changing discovery, redaction, adapters, MCP registration or authentication behavior.
+The suite covers public-method discovery, declared/required arity reporting, materialization allowlists, symlink-escape blocking, redaction and MCP server exposure/annotations. Add focused regression tests whenever these boundaries change.
 
-For browser automation, also run syntax checks and `npm run status` against a dedicated test profile when practical. Do not automate destructive remote operations as part of the default test suite.
+Browser automation has its own `npm test` suite for origin validation and startup failure handling. CI runs both root and browser tests. Do not automate destructive remote operations as part of the default test suite.
 
 ## Version consistency
 
-When bumping the package version, keep these values aligned:
-
-- root `package.json`
-- MCP server metadata in `src/sin/server.js`
-- `SKILL.md` metadata
-
-Prefer automating this in a future release script to avoid drift.
+The MCP server reads its version from root `package.json` at runtime, so that value cannot drift independently. Keep `SKILL.md` metadata aligned with the root package version when releasing.
 
 ## Release hygiene
 

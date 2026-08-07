@@ -1,6 +1,6 @@
 # TeraBox browser automation
 
-Local TeraBox web automation using Playwright, a dedicated persistent Chrome profile and a loopback-only Chrome DevTools Protocol (CDP) endpoint.
+Local TeraBox web automation using the Chrome DevTools Protocol (CDP), a dedicated persistent Chrome profile and a loopback-only debugging endpoint.
 
 This is an **optional integration mode**. It is separate from the root TeraBox-SIN CLI/MCP client and does not require NDUS configuration.
 
@@ -33,7 +33,10 @@ The CDP endpoint binds only to `127.0.0.1` by default. Do not expose it to a pub
 ```bash
 cd browser-automation
 npm install
+npm test
 ```
+
+The helper uses `chrome-remote-interface` and talks directly to the locally installed Chrome over CDP. It does not depend on Playwright's browser-context management, which improves compatibility with newer Chrome versions.
 
 ## First start
 
@@ -41,7 +44,7 @@ npm install
 npm run start
 ```
 
-A dedicated Chrome window opens at the TeraBox file area. On the first run, complete the normal TeraBox login in that window.
+A dedicated Chrome window opens at the TeraBox file area. On the first run, complete the normal TeraBox login in that window. The starter reports success only after the local CDP endpoint exposes a genuine `terabox.com` page; a missing Chrome executable or an occupied CDP port fails explicitly.
 
 The default runtime profile is:
 

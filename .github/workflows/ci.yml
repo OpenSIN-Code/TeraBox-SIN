@@ -1,9 +1,12 @@
 name: TeraBox-SIN CI
+
 on:
   push:
   pull_request:
+
 permissions:
   contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,3 +22,7 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: node src/sin/cli.js methods >/dev/null
+      - run: npm run html
+      - run: npm pack --dry-run --json >/dev/null
+      - run: npm ci --prefix browser-automation
+      - run: npm test --prefix browser-automation

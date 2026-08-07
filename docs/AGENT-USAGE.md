@@ -78,7 +78,7 @@ for `terabox_getRemoteDir`.
 TeraBoxApp.method(...args)
 ```
 
-Argument order is therefore significant. The `arity` field returned by `terabox_methods` is useful but is only JavaScript function arity; methods can still have optional/default parameters.
+Argument order is therefore significant. `terabox_methods` reports `arity` as the total declared parameter count and `required_arity` as JavaScript's required-parameter count before the first default value.
 
 When uncertain, inspect `api.js` or the generated API documentation instead of guessing.
 
@@ -107,6 +107,8 @@ Typical uses:
 - `$env` for controlled runtime substitution without embedding a value in the tool call.
 - `$progress` for upstream methods that accept a progress callback.
 
+For MCP calls these adapters are sandboxed: filesystem-backed adapters and explicit `output_path` values must stay inside `TERABOX_SIN_ALLOWED_ROOTS`, and `$env` names must be listed in `TERABOX_SIN_ALLOWED_ENV`. Both allowlists are empty/deny-by-default unless explicitly configured. Do not expand them merely to bypass a failed tool call.
+
 Do not use `$env` to expose secrets in tool output. It only substitutes the value into the method call.
 
 ## Binary results
@@ -125,7 +127,7 @@ Small binary values may be normalized inline as base64. Larger values and stream
 
 ## Mutations and destructive actions
 
-Tool annotations are generated from method-name heuristics. They help clients display likely read/write behavior, but they are not a permission model and are not guaranteed to classify every operation correctly.
+Tool annotations are generated conservatively from method names. Known read operations are marked read-only, while ambiguous generic entry points such as `doReq`, `filemanager`, and `terabox_call` are treated as potentially destructive. Annotations are still not an authorization model.
 
 Before operations such as delete, clear, overwrite, move, rename, restore, transfer or share changes:
 

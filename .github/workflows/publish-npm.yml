@@ -3,11 +3,15 @@ name: Publish NPM Package
 on:
   push:
     tags:
+      - 'v*'
       - 'api-*'
 
 permissions:
-  id-token: write  # Required for OIDC
+  id-token: write
   contents: write
+
+env:
+  HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
 
 jobs:
   publish:
@@ -15,21 +19,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup NodeJS
-        uses: actions/setup-node@v6
+        uses: actions/checkout@v7
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: 25
-          registry-url: 'https://registry.npmjs.org'
-      - name: PNPM Setup
-        uses: pnpm/action-setup@v5
-        with:
-          version: 10
-      - name: PNPM Install
-        run: pnpm install
-      - name: PNPM Publish
-        run: pnpm publish --no-git-checks
-      - name: Create Release
+          node-version: 24
+      - name: Update npm for trusted publishing
+        run: npm install --global 'npm@^11.5.1'
+      - name: Install
+        run: npm ci
+      - name: Check
+        run: npm run check
+      - name: Verify package
+        run: npm pack --dry-run --json >/dev/null
+      - name: Publish with bootstrap token
+        if: env.HAS_NPM_TOKEN == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+      - name: Publish with npm trusted publishing
+        if: env.HAS_NPM_TOKEN != 'true'
+        run: npm publish --access public --provenance
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true

@@ -1,14 +1,21 @@
 #!/usr/bin/env node
 import { chmod, copyFile, lstat, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const wowRoot = resolve(process.argv[2] || process.env.WOW_MY_ZSH_ROOT || '/Users/jeremy/dev/wow-my-zsh');
+const wowRoot = resolve(process.argv[2] || process.env.WOW_MY_ZSH_ROOT || join(homedir(), 'dev', 'wow-my-zsh'));
 const registryPath = join(wowRoot, 'shared', 'mcp', 'servers.json');
 const profilesPath = join(wowRoot, 'shared', 'mcp', 'task-profiles.json');
 const skillTarget = join(wowRoot, 'shared', 'skills', 'terabox-sin');
 const binTarget = join(wowRoot, 'bin');
+const defaultMcpRoots = [
+    join(homedir(), 'Desktop'),
+    join(homedir(), 'Documents'),
+    join(homedir(), 'Downloads'),
+    join(homedir(), '.cache', 'terabox-sin'),
+].join(delimiter);
 
 async function readJson(path) {
     return JSON.parse(await readFile(path, 'utf8'));
@@ -39,7 +46,10 @@ async function main() {
         _note: 'Full TeraBox Storage Cloud integration. Every public method from the installed TeraBox-SIN fork is exposed, including reads, uploads, downloads, sharing and file-management writes.',
         transport: 'local',
         command: ['terabox-sin-mcp'],
-        env: {},
+        env: {
+            TERABOX_SIN_ALLOWED_ROOTS: defaultMcpRoots,
+            TERABOX_SIN_ALLOWED_ENV: '',
+        },
         agents: ['claude', 'opencode', 'codex', 'cline', 'jcode', 'mimo'],
         tier: 'core',
         always_on: true,

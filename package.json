@@ -1,7 +1,7 @@
 {
   "name": "terabox-sin",
   "name_ext": "TeraBox-SIN",
-  "version": "3.0.0-sin.2",
+  "version": "3.0.0-sin.3",
   "description": "Full TeraBox client, CLI and MCP app for ChatGPT and autonomous agents, based on seiya-npm/terabox-api.",
   "type": "module",
   "main": "api.js",

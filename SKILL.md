@@ -21,7 +21,7 @@ metadata:
   author: Delqhi/SIN
   category: cloud-storage
   lifecycle: bundled
-  version: "3.0.0-sin.2"
+  version: "3.0.0-sin.3"
   updated: "2026-08-07"
 ---
 
@@ -121,6 +121,8 @@ Meaning:
 
 Adapters can appear recursively inside arrays and objects.
 
+For MCP, local adapters are sandboxed. `$file`, `$blob`, `$stream`, `$json_file` and explicit `output_path` values require the target path to be within `TERABOX_SIN_ALLOWED_ROOTS`. If that variable is empty, those local accesses are denied. `$env` requires the variable name to appear in the comma-separated `TERABOX_SIN_ALLOWED_ENV` allowlist. Do not broaden either allowlist merely to make a failing agent call succeed.
+
 ## Binary and streaming results
 
 Small binary results may be returned inline as base64. Larger binary results, streams and response-like bodies are written to disk.
@@ -153,7 +155,7 @@ terabox-sin mcp
 
 ## Mutation safety
 
-The MCP server classifies methods using name-based heuristics. This is useful for UI hints but can produce false positives or false negatives. For example, a method name containing `login`, `upload`, `recycle` or similar text can be marked mutating even when a particular invocation is observational.
+The MCP server uses conservative name-based classification. Known reads such as `checkLogin`, list/search/get methods and `shareList` are marked read-only; ambiguous generic methods such as `doReq` and `filemanager` are treated as potentially destructive. These annotations remain UX hints rather than authorization.
 
 Therefore:
 
