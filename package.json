@@ -17,7 +17,7 @@
   "scripts": {
     "html": "python3 docs/apidoc.py",
     "lint": "eslint . --config .eslint.config.js",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "check": "npm run lint && npm test",
     "cli": "node src/sin/cli.js",
     "mcp": "node src/sin/stdio.js",
