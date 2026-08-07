@@ -1,170 +1,138 @@
+# Development notes
+
+This file contains maintainer guidance for TeraBox-SIN. It intentionally avoids storing live credentials, copied session material or large dumps of private web endpoints.
+
+## Architecture
+
+### Core client
+
+`api.js` contains the inherited `TeraBoxApp` implementation from `seiya-npm/terabox-api`.
+
+The SIN layer lives under `src/sin/`:
+
+- `client.js` — client construction, public-method discovery, argument materialization and result normalization
+- `keychain.js` — NDUS lookup/storage/redaction helpers
+- `cli.js` — human/agent CLI
+- `server.js` — MCP tool registration
+- `stdio.js` — stdio transport entry point
+
+### Browser automation
+
+`browser-automation/` is deliberately separate from the core client. It uses Playwright over a local Chrome DevTools Protocol endpoint and stores browser state only in ignored runtime directories.
+
+Do not couple browser-profile authentication to NDUS storage unless there is a separately reviewed design for that conversion.
+
+## Authentication
+
+The core client resolves NDUS in this order:
+
+1. `TERABOX_NDUS`
+2. macOS Keychain (`TeraBox-SIN` / `ndus`)
+
+`createTeraBoxClient({ requireAuth: false })` is used for method discovery and other operations that do not require a configured session at construction time.
+
+Never add debug logging that prints request cookies, NDUS, passwords, OAuth credentials or unredacted authentication responses.
+
+## Public-method discovery
+
+`listPublicMethods()` walks the prototype chain until `Object.prototype`, excludes `constructor` and names beginning with `_`, and returns function-valued properties.
+
+This design keeps MCP exposure forward-compatible with upstream methods. Any upstream public method can therefore become an MCP tool automatically after an update.
+
+Consequences:
+
+- method discovery must remain deterministic;
+- private/internal helpers should begin with `_` or otherwise not be public functions;
+- documentation must tell agents to use `terabox_methods` instead of relying on a frozen static list.
+
+## Mutation annotations
+
+`isLikelyMutating()` is a name-based heuristic used for MCP annotations. It is not an authorization system and is known to over-classify some methods whose names contain terms such as `login`, `upload` or `recycle`.
+
+Do not make security decisions solely from these annotations.
+
+If classification quality becomes important, replace the heuristic with an explicit reviewed method-policy table plus a conservative fallback.
+
+## Argument materialization
+
+`materializeArguments()` supports recursive special values:
+
+- `$file`
+- `$blob`
+- `$stream`
+- `$json_file`
+- `$env`
+- `$abort_signal`
+- `$progress`
+
+Keep these adapters small and deterministic. New adapters that access credentials, network resources or executable code require additional security review.
+
+## Result normalization
+
+`normalizeResult()` converts upstream return values into MCP/JSON-friendly forms and masks common secret-shaped fields.
+
+Current behavior includes:
+
+- BigInt → string
+- small Buffer/Uint8Array/Blob → base64 envelope
+- large binary values → local file
+- streams → local file
+- Error → structured object
+- circular references → `[Circular]`
+- common credential field names → masked/redacted values
+
+Redaction is defense-in-depth. Do not assume unknown upstream fields are safe merely because normalization succeeded.
+
+## Official Open Platform research
+
+TeraBox's official integration documentation is separate from the inherited client:
+
+https://www.terabox.com/integrations/docs?lang=en
+
+As of August 2026, the documented official flow requires pre-issued application credentials and OAuth-style access/refresh tokens.
+
+If official Open Platform support is added, implement it as an explicit authentication/backend mode instead of silently replacing NDUS semantics.
+
+## Endpoint research
+
+Historical endpoint research can be recovered from Git history when needed. Avoid maintaining an unstructured list of web routes in this file because:
+
+- routes become stale quickly;
+- official and unofficial interfaces get mixed together;
+- examples can accidentally encourage credential leakage;
+- destructive endpoints are easy to copy without context.
+
+For active investigation, document only the endpoint needed for a specific issue or change, its source, date, observed behavior and whether it is official or inherited/private.
+
+## Tests
+
+Run before committing:
+
+```bash
+npm run check
 ```
-PCS API:
-http://developer.baidu.com/wiki/index.php?title=docs/pcs/rest/file_data_apis_list
-https://github.com/ly0/baidupcsapi/blob/master/baidupcsapi/api.py
-https://github.com/PeterDing/BaiduPCS-Py
-https://github.com/felixonmars/BaiduPCS-Go
-https://github.com/ywzhaiqi/userscript
-https://github.com/Yao544303/TeraboxFilesTransfer/tree/main
-https://www.dubox.com/disk/home#/all?path=%2F&vmode=list
 
-https://pan.baidu.com/union
-https://pan.baidu.com/union/document/entrance
-https://pan.baidu.com/union/doc/
-https://www.terabox.com/integrations/docs
+The suite currently covers public-method discovery/materialization behavior and MCP server exposure. Add focused regression tests when changing discovery, redaction, adapters, MCP registration or authentication behavior.
 
-OAuth:
-http://developer.baidu.com/wiki/index.php?title=docs/oauth
-http://developer.baidu.com/wiki/index.php?title=docs/oauth/overview
+For browser automation, also run syntax checks and `npm run status` against a dedicated test profile when practical. Do not automate destructive remote operations as part of the default test suite.
 
-https://www.terabox.com/wap/outlogin/login?type=2&redirectUrl=http%3A%2F%2Flocalhost:3000%2F
-https://www.terabox.com/login?from=pc&lang=en&show_third_login=1
-https://www.terabox.com/share/teratransfer/sharelist?app_id=250528&web=1&channel=dubox&clienttype=0&page=1&page_size=10
-https://www.staticcc.com/fe-opera-static/node-static-v4/fe-webv4-main/js/login.71e8269f.js
-https://www.terabox.fun/wap/outlogin/login?type=2&redirectUrl=https%3A%2F%2Fwww.terabox.fun%2F
-https://www.terabox.com/closeAccount
-https://www.terabox.com/clearData
-https://www.terabox.com/login/accountbinding
-https://www.terabox.com/wap/glodminer?show_type=3
-https://www.terabox.com/wap/commercial/taskcenter
-https://www.terabox.com/wap/commercial/taskcenter?version=3.34.1
-https://www.terabox.com/wap/commercial/usercenter?isNewCommercial=1
-https://www.terabox.com/wap/coins/product?productId=159&version=3.34.1
-https://www.terabox.com/wap/taskcenter/signin
-https://www.terabox.com/wap/taskcenter/game-center
-https://www.terabox.com/wap/commercial/spacelist
-https://www.terabox.com/wap/commercial/space
-https://www.terabox.com/wap/commercial
-https://www.terabox.com/wap/outlogin/login
-https://www.terabox.com/wap/hylogin/login
-https://www.terabox.com/wap/coins
-https://www.terabox.com/wap/activity
-https://www.terabox.app/sharing/link?surl=
+## Version consistency
 
-https://www.terabox.com/pfile/docview?path=/TeraBox.pdf
-https://www.terabox.com/api/locatedownload
-  ?app_id=250528
-  &web=1
-  &channel=dubox
-  &client=web
-  &clienttype=0
-  &bdstoken=
-  &jsToken=
-  &path=/TeraBox.pdf
-  &origin=pdf
-  &use=1
+When bumping the package version, keep these values aligned:
 
-https://www.terabox.com/wap/hylogin/resetpassword
-https://www.terabox.com/wap/help-center
-https://www.terabox.com/wap/safetyInstructions
-https://www.terabox.com/wap/webguide
-https://www.terabox.com/wap/tvbox
+- root `package.json`
+- MCP server metadata in `src/sin/server.js`
+- `SKILL.md` metadata
 
-/wap/terabox-cloud-storage-for-apk-free-download
-/wap/terabox-cloud-storage-for-pc-free-download
-/wap/cloud-storage-pricing-plans
-/wap/make-money-online
+Prefer automating this in a future release script to avoid drift.
 
-https://www.terabox.fun/wap/shortlink/cpm
-path: "/wap/hylogin/verifysendemail/" + n.type === "register" ? "register" : "bindemail"
-path: "/wap/tvbox/register"
-path: "/wap/tvbox/verifysendemail/:type"
+## Release hygiene
 
-/wap/publicity
-/wap/publicity/index
+Before a release:
 
-path: "/wap/shortlink/free-cloud-storage",
-path: "/wap/shortlink/faq",
-path: "/wap/shortlink/cpm",
-path: "/wap/shortlink/privacyPolicy",
-path: "/wap/shortlink/dashboard",
-path: "/wap/shortlink/links",
-path: "/wap/shortlink/mylinks",
-path: "/wap/shortlink/revenue",
-path: "/wap/shortlink/config",
-path: "/wap/shortlink",
-path: "/wap/shortlink/multilink",
-path: "/wap/shortlink/pageShortlinkTool",
-path: "/wap/shortlink/cloudFile",
-path: "/wap/shortlink/remoteUploadFile",
-path: "/wap/shortlink/shareVideo",
-path: "/wap/shortlink/search-resource",
-path: "/wap/shortlink/search-result",
-path: "/wap/shortlink/referral",
-
-path: "/wap/outlogin/login",
-path: "/wap/outlogin/register",
-path: "/wap/outlogin/verifysendemail/:type",
-path: "/wap/outlogin/resetpassword",
-path: "/wap/outlogin/accountbinding",
-path: "/wap/outlogin/loginprotect",
-path: "/wap/outlogin/loginprotectpre",
-path: "/wap/outlogin/resetpasswordsendEmail",
-path: "/wap/outlogin",
-path: "/wap/outlogin/emailRegister",
-path: "/wap/outlogin/emailVerfify",
-path: "/wap/outlogin/phoneRegister",
-
-/wap/commercial/usercenter
-/wap/commercial/taskcenter
-/wap/coins/home
-/wap/outlogin/accountbinding
-/wap/hyactivity/changename
-/wap/hyactivity/winning
-/wap/hyactivity/collectname
-/wap/hyactivity
-
-https://www.terabox.com/wap/signin/h5/emailovertime/resetpwd
-path: "/wap/signin/h5/emailovertime/" + this.from
-path: "/wap/signin/h5/verifysuccess"
-path: "/wap/signin/h5/emailinvalid/frequency"
-path: "/wap/signin/h5/emailinvalid/others?code=" + t.code
-path: "/wap/signin/h5/verifysuccess?from=" + e.from + "&open_from=" + t.from
-
-/wap/signin/h5/resetpassword
-/wap/signin/h5/emailovertime/:type
-/wap/signin/h5/resetsuccess
-/wap/signin/h5/verify
-/wap/signin/h5/emailinvalid/:type
-/wap/signin/h5/verifysuccess
-/wap/signin/h5
-
-path: "/wap/usbPromortion",
-"wap/commercial/redeem?entry=usb&isNewCommercial=1"
-https://www.terabox.com/wap/commercial/autopay
-https://www.terabox.com/wap/commercial/markupPurchase
-https://www.terabox.com/wap/commercial/purchasesuccess
-https://www.terabox.com/wap/commercial/consumptions
-https://www.terabox.com/wap/commercial/membershipagreement
-https://www.terabox.com/wap/commercial/couponlistpage
-https://www.terabox.com/wap/commercial/pullnew
-https://www.terabox.com/wap/commercial/recipient
-https://www.terabox.com/wap/commercial/redeem
-
-https://www.terabox.com/wap/cancellation/verification
-
-https://www.terabox.com/rest/recent/listall?version=3
-https://www.terabox.com/rest/2.0/netdisk/dumptimestamp
-
-curl -H "Cookie: ndus=..." "https://www.terabox.com/api/userdata/delete?app_id=250528&web=1&client=web&channel=dubox&clienttype=5&psign=0&type=%5B1%2C2%5D"
-
-curl -H "Cookie: ndus=..."
-  -X POST "https://terabox.com/passport/account/modify"
-  -d "client=android&pass_version=2.0&devuid=?&psign=?&uname=TeraBox"
-
-https://www.terabox.com/share/aset?
-  ...TERABOX_APP_PARAMS
-  jsToken=
-  app=universe
-  schannel=0
-  channel_list=[0]
-  period=0
-  path_list=[]
-  from=teraTransfer
-  pwd=
-
-https://www.terabox.com/share/taskquery?taskid=123
-https://www.terabox.com/group/resource/search?key_word=magia
-https://www.terabox.app/share/streaming
-https://www.terabox.com/api/sharedownload
-```
+1. `git status` is clean or contains only intended changes.
+2. `npm run check` passes.
+3. documentation matches actual CLI commands and package exports.
+4. browser runtime state is absent from the Git index.
+5. no NDUS/cookie/token/password values appear in the diff.
+6. upstream attribution remains intact.

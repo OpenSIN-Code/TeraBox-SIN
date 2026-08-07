@@ -1,38 +1,36 @@
 import { spawn } from 'node:child_process';
-import path from 'node:path';
-import os from 'node:os';
+import { ENDPOINT, PORT, PROFILE_DIR } from './lib.mjs';
 
-const port = 9225;
-const profile = path.join(os.homedir(), 'terabox-sin', 'browser-profile');
-const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const chrome = process.env.TERABOX_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const startUrl = 'https://www.terabox.com/main?category=all';
 
 async function alreadyRunning() {
     try {
-        const r = await fetch(`http://127.0.0.1:${port}/json/version`);
-        return r.ok;
+        const response = await fetch(`${ENDPOINT}/json/version`);
+        return response.ok;
     } catch {
         return false;
     }
 }
 
 if (await alreadyRunning()) {
-    console.log(`TeraBox browser already running on http://127.0.0.1:${port}`);
+    console.log(`TeraBox browser already running on ${ENDPOINT}`);
     process.exit(0);
 }
 
 const child = spawn(chrome, [
-    `--user-data-dir=${profile}`,
+    `--user-data-dir=${PROFILE_DIR}`,
     '--remote-debugging-address=127.0.0.1',
-    `--remote-debugging-port=${port}`,
+    `--remote-debugging-port=${PORT}`,
     '--no-first-run',
     '--no-default-browser-check',
     '--new-window',
-    'https://www.terabox.com/main?category=all'
+    startUrl,
 ], {
     detached: true,
-    stdio: 'ignore'
+    stdio: 'ignore',
 });
 
 child.unref();
-console.log(`Started dedicated TeraBox Chrome profile on port ${port}`);
-console.log(`Profile: ${profile}`);
+console.log(`Started dedicated TeraBox Chrome profile on ${ENDPOINT}`);
+console.log(`Profile: ${PROFILE_DIR}`);

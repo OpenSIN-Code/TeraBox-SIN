@@ -52,7 +52,7 @@ async function execute(handler) {
 export async function createTeraBoxMcpServer() {
     const server = new McpServer({
         name: 'TeraBox-SIN',
-        version: '3.0.0-sin.1',
+        version: '3.0.0-sin.2',
     });
 
     let clientPromise;

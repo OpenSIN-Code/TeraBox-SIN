@@ -1,18 +1,26 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
-import subprocess
+from pathlib import Path
 import shutil
+import subprocess
 import sys
-import os
 
-JSDOC_CONFIG = os.path.join(os.getcwd(), "docs/apidoc.json")
-DOCS_DIR = os.path.join(os.getcwd(), "html")
+ROOT = Path(__file__).resolve().parents[1]
+JSDOC_CONFIG = ROOT / "docs" / "apidoc.json"
+DOCS_DIR = ROOT / "html"
+JSDOC = ROOT / "node_modules" / ".bin" / "jsdoc"
+
+if not JSDOC.exists():
+    print("JSDoc is not installed. Run `npm install` first.", file=sys.stderr)
+    sys.exit(1)
 
 try:
-    print("🗑️ Deleting html folder...")
     shutil.rmtree(DOCS_DIR, ignore_errors=True)
-    print("🚀 Generating JSDoc...")
-    subprocess.run(["pnpm", "exec", "jsdoc", "-c", JSDOC_CONFIG], check=True)
-except subprocess.CalledProcessError as e:
-    print("❌ Error generating JSDoc:", e)
-    sys.exit(1)
+    subprocess.run(
+        [str(JSDOC), "-c", str(JSDOC_CONFIG)],
+        cwd=ROOT,
+        check=True,
+    )
+except subprocess.CalledProcessError as error:
+    print(f"JSDoc generation failed: {error}", file=sys.stderr)
+    sys.exit(error.returncode or 1)

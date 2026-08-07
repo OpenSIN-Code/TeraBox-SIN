@@ -11,10 +11,11 @@
     "./mcp": "./src/sin/server.js"
   },
   "bin": {
-    "terabox-sin": "./bin/terabox-sin"
+    "terabox-sin": "./bin/terabox-sin",
+    "terabox-sin-mcp": "./bin/terabox-sin-mcp"
   },
   "scripts": {
-    "html": "python docs/apidoc.py",
+    "html": "python3 docs/apidoc.py",
     "lint": "eslint . --config .eslint.config.js",
     "test": "node --test",
     "check": "npm run lint && npm test",

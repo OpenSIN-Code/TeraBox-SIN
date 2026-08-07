@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-WOW_ROOT=${WOW_MY_ZSH_ROOT:-/Users/jeremy/dev/wow-my-zsh}
+WOW_ROOT=${WOW_MY_ZSH_ROOT:-$HOME/dev/wow-my-zsh}
 
 cd "$ROOT"
 npm install
