@@ -4,7 +4,13 @@ import globals from 'globals';
 export default [
     js.configs.recommended,
     {
-        ignores: ['html/**', 'docs/**'],
+        ignores: [
+            'html/**',
+            'docs/**',
+            'browser-automation/browser-profile/**',
+            'browser-automation/data/**',
+            'browser-automation/downloads/**',
+        ],
     },
     {
         files: ['**/*.js', '**/*.mjs'],

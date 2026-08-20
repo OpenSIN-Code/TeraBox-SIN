@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import test from 'node:test';
 
-import { isTeraBoxUrl } from '../scripts/lib.mjs';
+import { classifyTeraBoxPage, isTeraBoxUrl } from '../scripts/lib.mjs';
 
 test('accepts only real TeraBox web origins', () => {
     assert.equal(isTeraBoxUrl('https://www.terabox.com/main?category=all'), true);
@@ -11,6 +11,25 @@ test('accepts only real TeraBox web origins', () => {
     assert.equal(isTeraBoxUrl('https://evil.example/?next=terabox.com'), false);
     assert.equal(isTeraBoxUrl('https://terabox.com.evil.example/'), false);
     assert.equal(isTeraBoxUrl('not-a-url'), false);
+});
+
+test('classifies login and file-area URLs fail-closed', () => {
+    assert.deepEqual(
+        classifyTeraBoxPage('https://www.terabox.com/login', 'Upload files after login'),
+        { likelyLoginScreen: true, likelyFileArea: false },
+    );
+    assert.deepEqual(
+        classifyTeraBoxPage('https://www.terabox.com/main?category=all', 'All files Upload'),
+        { likelyLoginScreen: false, likelyFileArea: true },
+    );
+    assert.deepEqual(
+        classifyTeraBoxPage('https://www.terabox.com/main?category=all', 'Login Upload'),
+        { likelyLoginScreen: true, likelyFileArea: false },
+    );
+    assert.deepEqual(
+        classifyTeraBoxPage('https://evil.example/login', 'All files Upload'),
+        { likelyLoginScreen: false, likelyFileArea: false },
+    );
 });
 
 test('starter fails cleanly when Chrome cannot be spawned', async () => {

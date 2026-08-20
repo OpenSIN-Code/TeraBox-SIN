@@ -23,6 +23,37 @@ export function isTeraBoxUrl(value) {
     }
 }
 
+export function classifyTeraBoxPage(urlValue, bodyText = '') {
+    let url;
+    try {
+        url = new URL(urlValue);
+    } catch {
+        return { likelyLoginScreen: false, likelyFileArea: false };
+    }
+    if (!isTeraBoxUrl(url.href)) {
+        return { likelyLoginScreen: false, likelyFileArea: false };
+    }
+    const pathName = url.pathname.toLowerCase();
+    const loginPath = pathName === '/login' || pathName.startsWith('/login/');
+    const mainPath = pathName === '/main' || pathName.startsWith('/main/');
+    const body = String(bodyText).slice(0, 12000);
+    const loginHints = /(log in|login|sign in|anmelden|einloggen)/i.test(body);
+    const fileHints = /(my files|all files|dateien|upload|hochladen)/i.test(body);
+    if (loginPath) {
+        return { likelyLoginScreen: true, likelyFileArea: false };
+    }
+    if (mainPath) {
+        return {
+            likelyLoginScreen: loginHints,
+            likelyFileArea: fileHints && !loginHints,
+        };
+    }
+    return {
+        likelyLoginScreen: loginHints && !fileHints,
+        likelyFileArea: false,
+    };
+}
+
 function targetScore(target) {
     try {
         const url = new URL(target.url);
