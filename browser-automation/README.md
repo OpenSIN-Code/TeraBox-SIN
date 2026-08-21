@@ -92,6 +92,15 @@ Create a folder through the web UI:
 npm run mkdir -- "Folder name"
 ```
 
+Return to the All Files root and open an existing folder:
+
+```bash
+npm run root
+npm run open -- "Persoenliche-Lebensakte"
+```
+
+`root` + `open` are intentionally small navigation primitives so higher-level sync scripts can keep uploads inside one dedicated folder without exporting browser cookies or inventing a second TeraBox client.
+
 UI automation is inherently less stable than a documented API. If selectors stop matching after a TeraBox redesign, update the helper and test it against a non-destructive operation first.
 
 ## Runtime configuration
