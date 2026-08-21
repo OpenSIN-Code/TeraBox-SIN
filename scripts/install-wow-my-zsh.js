@@ -28,15 +28,18 @@ async function writeJsonAtomic(path, value) {
     await import('node:fs/promises').then(({ rename }) => rename(temp, path));
 }
 
-async function replaceSymlink(path, target) {
+async function ensureSymlinkOrPreserveWrapper(path, target) {
     try {
         const stat = await lstat(path);
-        if (!stat.isSymbolicLink()) throw new Error(`Refusing to replace non-symlink: ${path}`);
+        if (!stat.isSymbolicLink()) {
+            return { path, mode: 'preserved-existing-wrapper' };
+        }
         await rm(path);
     } catch (error) {
         if (error.code !== 'ENOENT') throw error;
     }
     await symlink(target, path);
+    return { path, mode: 'symlinked', target };
 }
 
 async function main() {
@@ -81,8 +84,8 @@ async function main() {
     await copyFile(join(projectRoot, 'docs', 'AGENT-USAGE.md'), join(skillTarget, 'AGENT-USAGE.md'));
 
     await mkdir(binTarget, { recursive: true });
-    await replaceSymlink(join(binTarget, 'terabox-sin'), join(projectRoot, 'bin', 'terabox-sin'));
-    await replaceSymlink(join(binTarget, 'terabox-sin-mcp'), join(projectRoot, 'bin', 'terabox-sin-mcp'));
+    const cliInstall = await ensureSymlinkOrPreserveWrapper(join(binTarget, 'terabox-sin'), join(projectRoot, 'bin', 'terabox-sin'));
+    const mcpInstall = await ensureSymlinkOrPreserveWrapper(join(binTarget, 'terabox-sin-mcp'), join(projectRoot, 'bin', 'terabox-sin-mcp'));
     await chmod(join(projectRoot, 'bin', 'terabox-sin'), 0o755);
     await chmod(join(projectRoot, 'bin', 'terabox-sin-mcp'), 0o755);
 
@@ -93,6 +96,8 @@ async function main() {
         registry: registryPath,
         profile: 'terabox-storage',
         agents: registry.servers['terabox-sin'].agents,
+        cli_install: cliInstall,
+        mcp_install: mcpInstall,
     }, null, 2)}\n`);
 }
 

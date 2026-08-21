@@ -66,7 +66,8 @@ For the SIN/wow-my-zsh integration on macOS, use:
 WOW_MY_ZSH_ROOT="$HOME/dev/wow-my-zsh" bash scripts/install-mac.sh
 ```
 
-That installer also validates and regenerates the configured MCP registries. It is not required for a normal standalone install.
+That installer also validates and regenerates the configured MCP registries. It is not required for a normal standalone install. If `wow-my-zsh` already owns a regular `bin/terabox-sin` orchestration wrapper (for example to provide `terabox-sin ready`), the installer preserves that wrapper instead of replacing it with a symlink.
+
 
 ## Authentication
 

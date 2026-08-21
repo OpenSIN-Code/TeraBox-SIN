@@ -29,6 +29,17 @@ metadata:
 
 Use TeraBox-SIN for TeraBox Storage Cloud operations. Prefer the MCP server or CLI for structured operations. Use the separate browser automation only when a normal logged-in web workflow is specifically needed or the inherited API path is unsuitable.
 
+## wow-my-zsh integration
+
+When TeraBox-SIN is installed through `wow-my-zsh`, the local wrapper may expose an additional readiness check:
+
+```bash
+terabox-sin ready
+terabox-sin ready --preview
+```
+
+`ready` is a non-mutating orchestration preflight. It may accept either a valid structured session or an already authenticated dedicated browser profile. It must not start login, export cookies, bypass MFA/CAPTCHA, upload files, or mutate remote storage. If the wrapper does not expose `ready`, use `terabox-sin doctor` plus the normal status/browser-status checks instead.
+
 ## Authentication boundary
 
 The core CLI/MCP client authenticates with an **NDUS session**. It is read from, in priority order:
