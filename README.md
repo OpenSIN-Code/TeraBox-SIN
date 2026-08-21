@@ -168,11 +168,15 @@ Log in normally in the opened TeraBox window once. The dedicated profile persist
 ```bash
 npm run status
 npm run snapshot
+npm run root
+npm run open -- "Folder name"
 npm run upload -- /absolute/path/to/file
 npm run mkdir -- "Folder name"
 ```
 
 Runtime state lives under `browser-automation/browser-profile`, `data`, and `downloads`; these paths are ignored by Git.
+
+For repository-backed mirrors, keep manifests and checksums in the consuming repository. TeraBox-SIN should not become a second source of truth. The supported sequence is `root -> open -> upload -> verify`, with failed uploads left in a resumable pending queue. The Personal Life Record uses this pattern for its TeraBox offsite mirror.
 
 ## Official TeraBox Open API vs. this project
 

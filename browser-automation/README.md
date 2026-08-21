@@ -101,6 +101,8 @@ npm run open -- "Persoenliche-Lebensakte"
 
 `root` + `open` are intentionally small navigation primitives so higher-level sync scripts can keep uploads inside one dedicated folder without exporting browser cookies or inventing a second TeraBox client.
 
+For mirrors, do not mark a file complete merely because the upload action returned. Re-read the destination folder (or snapshot the visible listing) and let the caller persist its own checksum/verification manifest. This keeps retries idempotent and makes partial transfers recoverable.
+
 UI automation is inherently less stable than a documented API. If selectors stop matching after a TeraBox redesign, update the helper and test it against a non-destructive operation first.
 
 ## Runtime configuration

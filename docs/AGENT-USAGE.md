@@ -173,11 +173,19 @@ Available helpers currently include:
 
 ```bash
 npm run snapshot
+npm run root
+npm run open -- "Folder name"
 npm run upload -- /absolute/path/to/file
 npm run mkdir -- "Folder name"
 ```
 
 See `browser-automation/README.md` and `browser-automation/AGENT.md`.
+
+### Repository-backed mirror contract
+
+When an agent mirrors a repository or case archive to TeraBox, the source repository owns the manifest and hash state. TeraBox-SIN owns only remote navigation, upload and verification. Do not create a second authoritative database in TeraBox-SIN.
+
+Use this sequence: local hash/manifest -> `browser root` -> `browser open` -> upload pending file -> verify remote visibility -> mark manifest verified. On any failure, keep the item pending so a later run is resumable and idempotent. Never treat an upload click alone as proof of durable remote storage.
 
 ## Troubleshooting sequence
 

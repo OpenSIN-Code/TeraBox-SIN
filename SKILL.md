@@ -22,7 +22,7 @@ metadata:
   category: cloud-storage
   lifecycle: bundled
   version: "3.0.0-sin.3"
-  updated: "2026-08-07"
+  updated: "2026-08-21"
 ---
 
 # TeraBox-SIN
@@ -180,7 +180,26 @@ npm run start
 npm run status
 ```
 
-Then use the browser helper scripts documented in `browser-automation/README.md`.
+Then use the supported browser primitives:
+
+```bash
+terabox-sin browser root
+terabox-sin browser open "Folder name"
+terabox-sin browser mkdir "Folder name"
+terabox-sin browser upload /absolute/path/to/file
+terabox-sin browser snapshot
+```
+
+For durable mirrors, keep the browser/API client deliberately dumb: the consuming repository owns the manifest, hashes and pending queue; TeraBox-SIN only navigates, uploads and verifies visible remote state. A higher-level mirror should therefore:
+
+1. hash local source files (SHA-256 or stronger);
+2. skip files already recorded as remotely verified;
+3. return to `All Files`, enter the dedicated remote folder, and upload only pending files;
+4. verify the uploaded filename/remote listing before marking it mirrored;
+5. persist the manifest in the consuming system, never inside the browser profile;
+6. leave failures pending and resumable instead of silently declaring success.
+
+This is the canonical pattern used by the Personal Life Record mirror. It avoids cookie export, avoids a second storage database, and keeps TeraBox as a file mirror rather than a source of truth.
 
 ## Official Open API distinction
 
