@@ -158,6 +158,11 @@ export async function createTeraBoxClient(options = {}) {
     const client = new TeraBoxApp(ndus || '');
     if (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0) {
         client.TERABOX_TIMEOUT = options.timeoutMs;
+    } else {
+        const envTimeout = Number(process.env.TERABOX_TIMEOUT_MS);
+        if (Number.isFinite(envTimeout) && envTimeout > 0) {
+            client.TERABOX_TIMEOUT = envTimeout;
+        }
     }
     return client;
 }
