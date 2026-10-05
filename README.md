@@ -77,7 +77,7 @@ That installer also validates and regenerates the configured MCP registries. It 
 terabox-sin login user@example.com
 ```
 
-On macOS, the password is requested in a hidden native dialog. If login succeeds and the upstream response contains an NDUS session, TeraBox-SIN stores it in macOS Keychain.
+The password is requested without echo in a native dialog on macOS and a hidden TTY prompt on Linux. If login succeeds and the upstream response contains an NDUS session, TeraBox-SIN stores it in macOS Keychain or Linux GNOME Secret Service. Linux requires an active, unlocked Secret Service collection; `terabox-sin doctor` distinguishes the installed `secret-tool` command from a responding Secret Service.
 
 ### Option 2: import an existing NDUS session
 
@@ -85,7 +85,7 @@ On macOS, the password is requested in a hidden native dialog. If login succeeds
 terabox-sin session set
 ```
 
-Interactive macOS sessions use a hidden native dialog. Controlled non-interactive use can provide the value on stdin.
+Interactive macOS sessions use a hidden native dialog; Linux uses a hidden TTY prompt. Controlled non-interactive use can provide the value on stdin.
 
 ### Option 3: runtime environment variable
 

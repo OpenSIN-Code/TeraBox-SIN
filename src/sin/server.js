@@ -94,7 +94,7 @@ export async function createTeraBoxMcpServer() {
 
     server.registerTool('terabox_session_status', {
         title: 'TeraBox session status',
-        description: 'Report whether an NDUS session exists in environment or macOS Keychain. Never returns the full token.',
+        description: 'Report whether an NDUS session exists in environment, macOS Keychain, or Linux Secret Service. Never returns the full token.',
         inputSchema: z.object({}),
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     }, () => execute(async () => {
@@ -103,7 +103,7 @@ export async function createTeraBoxMcpServer() {
             configured: Boolean(token),
             masked: maskToken(token),
             keychain_available: await keychainAvailable(),
-            source: process.env.TERABOX_NDUS ? 'environment' : token ? 'macos-keychain' : null,
+            source: process.env.TERABOX_NDUS ? 'environment' : token ? (process.platform === 'darwin' ? 'macos-keychain' : 'linux-secret-service') : null,
         };
     }));
 

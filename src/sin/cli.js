@@ -14,8 +14,12 @@ import {
     getStoredNdus,
     keychainAvailable,
     maskToken,
+    sanitizeLoginResult,
+    secretServiceAvailable,
+    secretToolAvailable,
     storeNdus,
 } from './keychain.js';
+import { readHiddenInput } from './secret-input.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -24,7 +28,7 @@ function output(value) {
 }
 
 function usage(exitCode = 0) {
-    process.stderr.write('TeraBox-SIN\n\nUsage:\n  terabox-sin doctor\n  terabox-sin status\n  terabox-sin methods\n  terabox-sin call <method> [json-array|@file.json] [--output <path>]\n  terabox-sin session status\n  terabox-sin session set          # native hidden macOS dialog, or token on stdin\n  terabox-sin session delete\n  terabox-sin login [email]        # native email/password dialogs on macOS\n  terabox-sin mcp                  # stdio MCP server\n');
+    process.stderr.write('TeraBox-SIN\n\nUsage:\n  terabox-sin doctor\n  terabox-sin status\n  terabox-sin methods\n  terabox-sin call <method> [json-array|@file.json] [--output <path>]\n  terabox-sin session status\n  terabox-sin session set          # hidden macOS dialog or hidden Linux TTY; stdin when piped\n  terabox-sin session delete\n  terabox-sin login [email]        # hidden password dialog/TTY; stdin when piped\n  terabox-sin mcp                  # stdio MCP server\n');
     process.exit(exitCode);
 }
 
@@ -50,7 +54,8 @@ async function hiddenDialog(prompt) {
 
 async function secretInput(prompt) {
     if (!process.stdin.isTTY) return readAllStdin();
-    return hiddenDialog(prompt);
+    if (process.platform === 'darwin') return hiddenDialog(prompt);
+    return readHiddenInput(prompt, { stdin: process.stdin, stdout: process.stderr });
 }
 
 async function parseArgsValue(raw) {
@@ -77,16 +82,23 @@ async function main() {
     if (command === 'doctor') {
         const token = await getStoredNdus();
         const client = await createTeraBoxClient({ requireAuth: false });
+        const secureStoreAvailable = await keychainAvailable();
+        const secretToolInstalled = process.platform === 'linux' ? await secretToolAvailable() : false;
+        const serviceAvailable = process.platform === 'linux'
+            ? await secretServiceAvailable()
+            : secureStoreAvailable;
         let remote = null;
         if (token) {
             try { remote = await getTeraBoxStatus(); }
             catch (error) { remote = { error: error.message }; }
         }
         return output({
-            ok: Boolean(await keychainAvailable()),
+            ok: Boolean(secureStoreAvailable),
             node: process.version,
             platform: process.platform,
-            keychain_available: await keychainAvailable(),
+            keychain_available: secureStoreAvailable,
+            secret_tool_available: secretToolInstalled,
+            secret_service_available: serviceAvailable,
             session_configured: Boolean(token),
             session_masked: maskToken(token),
             public_method_count: describePublicMethods(client).length,
@@ -136,9 +148,9 @@ async function main() {
         const prelogin = await client.passportPreLogin(email);
         const result = await client.passportLogin(prelogin, email, password);
         const token = result?.data?.ndus;
-        if (!token) return output({ stored: false, login: result });
+        if (!token) return output({ stored: false, login: sanitizeLoginResult(result) });
         await storeNdus(token);
-        return output({ stored: true, login: { ...result, data: { ...result.data, ndus: maskToken(token) } } });
+        return output({ stored: true, login: sanitizeLoginResult(result) });
     }
 
     usage(1);
