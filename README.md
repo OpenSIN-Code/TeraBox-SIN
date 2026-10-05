@@ -39,9 +39,13 @@ See [`browser-automation/README.md`](browser-automation/README.md).
 - Node.js 20 or newer
 - npm
 - macOS for Keychain-backed session storage and native login/session dialogs
+- Linux for GNOME Secret Service-backed session storage (`secret-tool` plus an
+  active, unlocked Secret Service collection); Linux login uses hidden TTY input
 - Google Chrome only for the optional browser-automation mode
 
-The core client can run on other operating systems when `TERABOX_NDUS` is supplied at runtime, but automatic secure session persistence currently uses macOS Keychain.
+The core client runs on macOS and Linux. macOS stores sessions in Keychain;
+Linux stores sessions in GNOME Secret Service. Other operating systems require
+`TERABOX_NDUS` at runtime and do not get automatic secure session persistence.
 
 ## Install
 

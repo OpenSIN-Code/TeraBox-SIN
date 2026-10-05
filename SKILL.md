@@ -49,6 +49,29 @@ The core CLI/MCP client authenticates with an **NDUS session**. It is read from,
 
 Never print, log, commit, paste, summarize or return the complete NDUS value. Treat browser cookies, OAuth tokens, passwords and persistent browser profiles the same way.
 
+### Linux host login (for example, sin-vm2)
+
+Use TeraBox-SIN's native interactive login on the destination host. Do not copy a
+macOS browser profile, cookies, Keychain item, or NDUS session to Linux.
+
+1. Run `terabox-sin doctor` and `terabox-sin session status` on the Linux host.
+2. If `secret-tool` or the Secret Service backend is missing, install the
+   distro-provided `libsecret-tools` and GNOME Keyring/Secret Service components
+   on that host, then verify `secret-tool` and an active, unlocked user session.
+   Do not store the TeraBox password in a file, environment variable, command
+   argument, task packet, or agent transcript.
+3. In the visible Orca terminal attached to that Linux host, run
+   `terabox-sin login <account-email>`. The account owner types the password at
+   the hidden TTY prompt. Agents must not read, request, relay, or type it.
+4. Verify `terabox-sin session status`, `terabox-sin doctor`, and
+   `terabox-sin status`; report only sanitized state.
+5. Start at most one transfer writer for the shared transfer/register scope.
+   Bind its task, process identity, source queue, destination, and monitor before
+   launch. Do not start another writer if a live binding already exists.
+
+If the host or its user session is unreachable, prepare the documented steps but
+do not attempt a remote login fallback or start a second writer elsewhere.
+
 Use these commands for authentication state:
 
 ```bash
