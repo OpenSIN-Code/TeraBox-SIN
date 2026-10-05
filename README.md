@@ -19,7 +19,7 @@ These modes are intentionally separate. The browser profile is never committed a
 - File listing, metadata, search, quota, download, upload, share, file-management, recycle-bin, remote-upload and cloud-download operations exposed by the installed client
 - Local argument adapters for files, blobs, streams, JSON files, environment variables, abort signals and progress callbacks
 - Binary/stream result materialization to disk
-- macOS Keychain storage for the NDUS session
+- Secure NDUS session storage: macOS Keychain or Linux GNOME Secret Service
 - Session redaction in normalized results
 - CLI and stdio MCP entry points
 

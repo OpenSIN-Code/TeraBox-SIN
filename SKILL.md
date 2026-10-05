@@ -45,7 +45,7 @@ terabox-sin ready --preview
 The core CLI/MCP client authenticates with an **NDUS session**. It is read from, in priority order:
 
 1. `TERABOX_NDUS` in the process environment.
-2. macOS Keychain service `TeraBox-SIN`, account `ndus`.
+2. macOS Keychain service `TeraBox-SIN`, account `ndus`, or Linux GNOME Secret Service via `secret-tool` (requires an active, unlocked collection).
 
 Never print, log, commit, paste, summarize or return the complete NDUS value. Treat browser cookies, OAuth tokens, passwords and persistent browser profiles the same way.
 
