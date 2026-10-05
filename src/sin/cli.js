@@ -58,6 +58,124 @@ async function secretInput(prompt) {
     return readHiddenInput(prompt, { stdin: process.stdin, stdout: process.stderr });
 }
 
+export const LOGIN_EMAIL_DIALOG_PROMPT = 'TeraBox-Konto-E-Mail eingeben';
+export const LOGIN_EMAIL_TTY_PROMPT = 'TeraBox-Konto-E-Mail eingeben: ';
+
+/**
+ * Visible account-identifier input for interactive terminals.
+ *
+ * Linux counterpart to the macOS text dialog: reads one line in cooked mode
+ * so the terminal echoes input naturally. Never touches raw mode. Piped
+ * stdin is returned trimmed without writing a prompt. Test-only fakes are
+ * injected via options; this helper never touches real secrets by itself.
+ *
+ * @param {string} prompt Text written before reading (TTY only).
+ * @param {object} [options] Overrides for testing.
+ * @param {object} [options.stdin] Defaults to process.stdin.
+ * @param {object} [options.stdout] Defaults to process.stderr.
+ * @returns {Promise<string>} Trimmed input value.
+ */
+export async function readTextInput(prompt = '', options = {}) {
+    const stdin = options.stdin || process.stdin;
+    const stdout = options.stdout || process.stderr;
+
+    if (!stdin.isTTY) {
+        const chunks = [];
+        for await (const chunk of stdin) chunks.push(chunk);
+        return Buffer.concat(chunks).toString('utf8').trim();
+    }
+
+    if (typeof prompt === 'string' && prompt) stdout.write(prompt);
+
+    return new Promise((resolve, reject) => {
+        let value = '';
+        let settled = false;
+
+        const cleanup = () => {
+            stdin.removeListener('data', onData);
+            try {
+                if (typeof stdin.pause === 'function') stdin.pause();
+            } catch {
+                // Ignore pause errors on fake streams.
+            }
+        };
+
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            stdout.write('\n');
+            resolve(result);
+        };
+
+        const cancel = (error) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            stdout.write('\n');
+            reject(error);
+        };
+
+        function onData(chunk) {
+            const text = String(chunk);
+            for (const char of text) {
+                if (char === '\r' || char === '\n') {
+                    finish(value.trim());
+                    return;
+                }
+                if (char === '\u0003') {
+                    cancel(new Error('Input cancelled.'));
+                    return;
+                }
+                if (char === '\u0004' && value.length === 0) {
+                    finish('');
+                    return;
+                }
+                if (char === '\u007f' || char === '\b') {
+                    value = value.slice(0, -1);
+                    continue;
+                }
+                // Skip other control characters; cooked-mode echo stays visible.
+                if (char < ' ' && char !== '\t') continue;
+                value += char;
+            }
+        }
+
+        try {
+            if (typeof stdin.setEncoding === 'function') stdin.setEncoding('utf8');
+            if (typeof stdin.resume === 'function') stdin.resume();
+        } catch (error) {
+            cancel(error);
+            return;
+        }
+        stdin.on('data', onData);
+    });
+}
+
+/**
+ * Resolve the login account identifier.
+ *
+ * An explicit argument is always returned untouched. On macOS the native
+ * dialog is used. On Linux an interactive TTY is prompted visibly; without
+ * a TTY (piped stdin) an error is thrown so the piped stream stays reserved
+ * for the hidden password read. Dependencies are injectable for tests.
+ */
+export async function resolveLoginEmail(argEmail, options = {}) {
+    if (argEmail) return argEmail;
+    const platform = options.platform || process.platform;
+    if (platform === 'darwin') {
+        const dialog = options.textDialog || textDialog;
+        return dialog(LOGIN_EMAIL_DIALOG_PROMPT);
+    }
+    const stdin = options.stdin || process.stdin;
+    const stdout = options.stdout || process.stderr;
+    if (!stdin.isTTY) {
+        throw new Error('No email supplied; pass the email address as an argument when stdin is reserved for the password.');
+    }
+    const reader = options.readTextInput || readTextInput;
+    return reader(LOGIN_EMAIL_TTY_PROMPT, { stdin, stdout });
+}
+
 async function parseArgsValue(raw) {
     if (!raw) return [];
     if (raw.startsWith('@')) return JSON.parse(await readFile(raw.slice(1), 'utf8'));
@@ -138,7 +256,7 @@ async function main() {
     }
 
     if (command === 'login') {
-        const email = argv.shift() || await textDialog('TeraBox-Konto-E-Mail eingeben');
+        const email = await resolveLoginEmail(argv.shift(), { platform: process.platform, stdin: process.stdin, stdout: process.stderr });
         if (!email) throw new Error('No email supplied.');
         const password = process.platform === 'darwin'
             ? await hiddenDialog(`TeraBox-Passwort für ${email}`)
@@ -156,7 +274,12 @@ async function main() {
     usage(1);
 }
 
-main().catch((error) => {
-    process.stderr.write(`${JSON.stringify({ error: error.message, cause: error.cause?.message || error.cause || null })}\n`);
-    process.exitCode = 1;
-});
+// Guarded so synthetic tests can import the prompt helpers without running
+// the CLI as a side effect. Direct execution (node src/sin/cli.js, including
+// via bin/terabox-sin) still runs main; imports do not.
+if ((process.argv[1] || '').endsWith('cli.js')) {
+    main().catch((error) => {
+        process.stderr.write(`${JSON.stringify({ error: error.message, cause: error.cause?.message || error.cause || null })}\n`);
+        process.exitCode = 1;
+    });
+}

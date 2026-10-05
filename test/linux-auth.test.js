@@ -229,3 +229,141 @@ test('sanitizeLoginResult handles responses without a session token', () => {
     assert.equal(sanitized.errno, 1);
     assert.equal(sanitizeLoginResult(null), null);
 });
+
+// ---------------------------------------------------------------------------
+// Linux interactive login without an email argument (TTY email prompt)
+// Synthetic fakes only: no real credentials, identifiers, or network calls.
+// ---------------------------------------------------------------------------
+
+function fakeTtyStdin() {
+    const stdin = new EventEmitter();
+    stdin.isTTY = true;
+    stdin.setEncoding = () => {};
+    stdin.setRawMode = () => {
+        throw new Error('setRawMode must not be called for visible email input');
+    };
+    stdin.resume = () => {};
+    stdin.pause = () => {};
+    return stdin;
+}
+
+function captureStdout() {
+    const writes = [];
+    return { writes, stdout: { write: (chunk) => { writes.push(String(chunk)); return true; } } };
+}
+
+test('cli exposes a visible TTY email prompt helper', async () => {
+    const cli = await import('../src/sin/cli.js');
+    assert.equal(typeof cli.readTextInput, 'function');
+    assert.equal(typeof cli.resolveLoginEmail, 'function');
+});
+
+test('readTextInput returns piped stdin trimmed without touching raw mode', async () => {
+    const { readTextInput } = await import('../src/sin/cli.js');
+    async function* chunks() {
+        yield Buffer.from('  synthetic-user@example.invalid  ');
+    }
+    const stdin = {
+        isTTY: false,
+        setRawMode() {
+            throw new Error('setRawMode must not be called for piped stdin');
+        },
+        [Symbol.asyncIterator]: chunks,
+    };
+    const { writes, stdout } = captureStdout();
+    assert.equal(await readTextInput('E-Mail: ', { stdin, stdout }), 'synthetic-user@example.invalid');
+    assert.ok(!writes.join('').includes('synthetic-user'));
+});
+
+test('readTextInput reads a visible TTY line without enabling raw mode', async () => {
+    const { readTextInput } = await import('../src/sin/cli.js');
+    const stdin = fakeTtyStdin();
+    const { writes, stdout } = captureStdout();
+    const pending = readTextInput('TeraBox-Konto-E-Mail eingeben: ', { stdin, stdout });
+    queueMicrotask(() => {
+        for (const key of ['s', 'y', 'n', 't', 'h', '\n']) stdin.emit('data', key);
+    });
+    assert.equal(await pending, 'synth');
+    assert.ok(writes.join('').includes('TeraBox-Konto-E-Mail'));
+    assert.ok(writes.join('').endsWith('\n'));
+});
+
+test('readTextInput supports backspace on a visible TTY line', async () => {
+    const { readTextInput } = await import('../src/sin/cli.js');
+    const stdin = fakeTtyStdin();
+    const { stdout } = captureStdout();
+    const pending = readTextInput('E-Mail: ', { stdin, stdout });
+    queueMicrotask(() => {
+        for (const key of ['a', 'b', '\u007f', 'c', '\r']) stdin.emit('data', key);
+    });
+    assert.equal(await pending, 'ac');
+});
+
+test('readTextInput cancels when Ctrl-C is received', async () => {
+    const { readTextInput } = await import('../src/sin/cli.js');
+    const stdin = fakeTtyStdin();
+    const { writes, stdout } = captureStdout();
+    const pending = readTextInput('E-Mail: ', { stdin, stdout });
+    queueMicrotask(() => stdin.emit('data', '\u0003'));
+    await assert.rejects(pending, /Input cancelled/);
+    assert.ok(writes.join('').endsWith('\n'));
+});
+
+test('resolveLoginEmail preserves an explicit email argument untouched', async () => {
+    const { resolveLoginEmail } = await import('../src/sin/cli.js');
+    const stdin = {
+        isTTY: true,
+        on() { throw new Error('stdin must not be read when an email argument is given'); },
+    };
+    const { stdout } = captureStdout();
+    assert.equal(
+        await resolveLoginEmail('explicit-user@example.invalid', { platform: 'linux', stdin, stdout }),
+        'explicit-user@example.invalid',
+    );
+});
+
+test('resolveLoginEmail prompts on the interactive Linux TTY when no email is given', async () => {
+    const { resolveLoginEmail } = await import('../src/sin/cli.js');
+    const stdin = fakeTtyStdin();
+    const { writes, stdout } = captureStdout();
+    const pending = resolveLoginEmail(undefined, { platform: 'linux', stdin, stdout });
+    queueMicrotask(() => {
+        for (const key of ['t', 't', 'y', '\n']) stdin.emit('data', key);
+    });
+    assert.equal(await pending, 'tty');
+    assert.ok(writes.join('').includes('E-Mail'));
+});
+
+test('resolveLoginEmail rejects without a TTY when no email is given', async () => {
+    const { resolveLoginEmail } = await import('../src/sin/cli.js');
+    async function* chunks() {
+        yield Buffer.from('must-not-be-consumed');
+    }
+    const stdin = { isTTY: false, [Symbol.asyncIterator]: chunks };
+    const { writes, stdout } = captureStdout();
+    await assert.rejects(
+        resolveLoginEmail(undefined, { platform: 'linux', stdin, stdout }),
+        /No email supplied; pass the email address as an argument/,
+    );
+    assert.equal(writes.join(''), '');
+});
+
+test('resolveLoginEmail keeps the macOS native dialog path', async () => {
+    const { resolveLoginEmail } = await import('../src/sin/cli.js');
+    let dialogCalls = 0;
+    const textDialog = async (prompt) => {
+        dialogCalls += 1;
+        assert.ok(String(prompt).includes('E-Mail'));
+        return 'dialog-user@example.invalid';
+    };
+    const stdin = {
+        isTTY: true,
+        on() { throw new Error('stdin must not be read on macOS dialog path'); },
+    };
+    const { stdout } = captureStdout();
+    assert.equal(
+        await resolveLoginEmail(undefined, { platform: 'darwin', stdin, stdout, textDialog }),
+        'dialog-user@example.invalid',
+    );
+    assert.equal(dialogCalls, 1);
+});
