@@ -32,8 +32,10 @@ export async function secretServiceAvailable(options = {}) {
     const exec = resolveExec(options);
     try {
         await exec('secret-tool', ['--help'], { timeout: 5000 });
-    } catch {
-        return false;
+    } catch (error) {
+        // secret-tool --help exits 2 on some installations even when present.
+        // Only a non-2 failure proves the CLI is missing; exit 2 still probes lookup.
+        if (error?.code !== 2) return false;
     }
     try {
         await exec('secret-tool', ['lookup', 'service', KEYCHAIN_SERVICE, 'account', '__sin_health_probe__'], { timeout: 5000 });
@@ -52,7 +54,9 @@ export async function secretToolAvailable(options = {}) {
     try {
         await exec('secret-tool', ['--help'], { timeout: 5000 });
         return true;
-    } catch {
+    } catch (error) {
+        // secret-tool --help exits 2 on some installations even when present.
+        if (error?.code === 2) return true;
         return false;
     }
 }

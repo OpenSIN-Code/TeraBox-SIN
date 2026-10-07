@@ -166,6 +166,46 @@ test('secretToolAvailable only reports whether the CLI is installed', async () =
     assert.equal(await secretToolAvailable({ exec: missing.exec }), false);
 });
 
+test('secretToolAvailable reports installed when --help exits 2', async () => {
+    const { exec, calls } = fakeExecFactory(async () => {
+        throw Object.assign(new Error('secret-tool --help exits 2'), { code: 2, stdout: 'usage', stderr: '' });
+    });
+    assert.equal(await secretToolAvailable({ exec }), true);
+    assert.deepEqual(calls[0].args, ['--help']);
+});
+
+test('secretServiceAvailable probes lookup when --help exits 2', async () => {
+    const { exec, calls } = fakeExecFactory(async (file, args) => {
+        if (args[0] === '--help') throw Object.assign(new Error('secret-tool --help exits 2'), { code: 2 });
+        return { stdout: '', stderr: '' };
+    });
+    assert.equal(await secretServiceAvailable({ exec }), true);
+    assert.equal(calls.length, 2);
+    assert.deepEqual(calls[0].args, ['--help']);
+});
+
+test('secretServiceAvailable reports responding when lookup exits 1 with no service-error text', async () => {
+    const { exec, calls } = fakeExecFactory(async (file, args) => {
+        if (args[0] === '--help') return { stdout: 'usage', stderr: '' };
+        throw Object.assign(new Error('No such secret'), { code: 1, stdout: '', stderr: '' });
+    });
+    assert.equal(await secretServiceAvailable({ exec }), true);
+    assert.equal(calls.length, 2);
+});
+
+test('secretServiceAvailable remains unavailable for ENOENT and D-Bus NoReply', async () => {
+    const missingTool = fakeExecFactory(async () => { throw Object.assign(new Error('missing'), { code: 'ENOENT' }); });
+    assert.equal(await secretServiceAvailable({ exec: missingTool.exec }), false);
+    assert.equal(missingTool.calls.length, 1);
+
+    const noReply = fakeExecFactory(async (file, args) => {
+        if (args[0] === '--help') return { stdout: 'usage', stderr: '' };
+        throw Object.assign(new Error('org.freedesktop.DBus.Error.NoReply'), { code: 1 });
+    });
+    assert.equal(await secretServiceAvailable({ exec: noReply.exec }), false);
+    assert.equal(noReply.calls.length, 2);
+});
+
 test('deleteStoredNdus clears the Secret Service item on Linux', async () => {
     const { exec, calls } = fakeExecFactory(async () => ({ stdout: '', stderr: '' }));
     const result = await deleteStoredNdus({ platform: 'linux', exec });
